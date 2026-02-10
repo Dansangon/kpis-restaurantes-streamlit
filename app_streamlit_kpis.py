@@ -4,6 +4,27 @@ from io import BytesIO
 
 APP_TITLE = "KPIs por Restaurante (Streamlit) - estilo azul + ranking + comparativa"
 
+# ---------- Login (usuario + contraseña) ----------
+def check_login():
+    def _verify():
+        u_ok = st.session_state.get("user", "") == st.secrets["auth"]["username"]
+        p_ok = st.session_state.get("pass", "") == st.secrets["auth"]["password"]
+        st.session_state["auth_ok"] = bool(u_ok and p_ok)
+        if st.session_state["auth_ok"]:
+            # borra password del estado para no mantenerlo en memoria
+            st.session_state.pop("pass", None)
+
+    if st.session_state.get("auth_ok", False):
+        return True
+
+    st.markdown("## Acceso")
+    st.text_input("Usuario", key="user")
+    st.text_input("Contraseña", type="password", key="pass", on_change=_verify)
+    if "auth_ok" in st.session_state and not st.session_state["auth_ok"]:
+        st.error("Usuario o contraseña incorrectos")
+    return False
+
+
 # ---------------- Utilidades ----------------
 def norm(s):
     return str(s).strip().lower().replace("\n", " ").replace("  ", " ")
@@ -300,6 +321,10 @@ def to_excel_compare(df_compare: pd.DataFrame):
 
     bio.seek(0)
     return bio.getvalue()
+
+if not check_login():
+    st.stop()
+
 
 # ---------------- UI Streamlit ----------------
 st.set_page_config(page_title=APP_TITLE, layout="wide")
